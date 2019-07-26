@@ -13,30 +13,34 @@ class Server(socketserver.ThreadingTCPServer):
         socketserver.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass)
 
 
-class Recv (socketserver.BaseRequestHandler):
+class RecvHandler (socketserver.StreamRequestHandler):
+
+    def setup(self):
+        super(RecvHandler, self).setup()
+        print("before handle, setup connection " + str(self.client_address))
+        #self.server.logger.info("before handle, setup connection " + str(self.client_address))
 
     def handle(self):
+        #buffer = bytearray()
         try:
             while True:
-                data = self.request.recv(2048)
-                self.server.queue.put(data)
-                print("{} send:".format(self.client_address) + str(data))
-                #self.server.logger.info("{} send:".format(self.client_address) + str(data))
-                if not data:
-                    print('connection lost')
+                data = self.rfile.readline().strip()
+                if (data != '' and data):
+                    self.server.queue.put(data)
+                    print("{} send:".format(self.client_address) + str(data))
+                else:
+                    print('syntax error messages')
                     #self.server.error('connection lost')
-                    break
+                    #break
         except Exception as e:
             print(self.client_address, "connect disconnected")
+            print(e)
             #self.server.error(self.client_address, "connect disconnected")
         finally:
             self.request.close()
 
-    def setup(self):
-        print("before handle, setup connection " + str(self.client_address))
-        #self.server.logger.info("before handle, setup connection " + str(self.client_address))
-
     def finish(self):
+        super(RecvHandler, self).finish()
         print("finish run after handle")
         #self.server.logger.info("finish run after handle")
 

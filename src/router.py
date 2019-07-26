@@ -1,4 +1,4 @@
-from node import Recv, Send, Server
+from node import RecvHandler, Send, Server
 import socketserver
 import multiprocessing
 from multiprocessing import Process
@@ -24,7 +24,7 @@ def get_log():
 
 
 def start_recv(address):
-    server = Server(address, Recv, get_log)
+    server = Server(address, RecvHandler, get_log)
     server.serve_forever()
 
 
@@ -41,12 +41,13 @@ def test():
 
     for i in range(N):
         Process(target=start_recv, kwargs={"address": addresses[i]}).start()
+    time.sleep(1)
 
     for j in range(10):
         for i in range(N):
-            msg = ("msg %d" % j).encode('utf-8')
+            msg = ("msg %d\n" % j).encode('utf-8')
             sends[j % 4].send(addresses[i], msg)
-            time.sleep(1)
+            #time.sleep(1)
 
 
 if __name__ == "__main__":
