@@ -1,15 +1,19 @@
-import socketserver
 import socket
 from gevent.queue import Queue
 import socketserver
 
 
+
+
 class Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
 
-    def __init__(self, server_address, RequestHandlerClass, get_log):
+    def __init__(self, server_address, RequestHandlerClass, get_log, queue = None):
         self.logger = get_log()
-        self.queue = Queue()
+        if queue is None:
+            self.queue = Queue()
+        else:
+            self.queue = queue
         socketserver.ThreadingTCPServer.__init__(self, server_address, RequestHandlerClass)
 
 
@@ -25,10 +29,12 @@ class RecvHandler (socketserver.StreamRequestHandler):
         try:
             while True:
                 data = self.rfile.readline().strip()
+                #print(data)
                 if (data != '' and data):
                     self.server.queue.put(data)
                     print("{} send:".format(self.client_address) + str(data))
                 else:
+                    print(data)
                     print('syntax error messages')
                     #self.server.error('connection lost')
                     #break
@@ -46,11 +52,9 @@ class RecvHandler (socketserver.StreamRequestHandler):
 
 
 class Send:
-    _id = id
     _sockets = dict()
 
-    def __init__ (self, id, addresses):
-        self._id = id
+    def __init__ (self, addresses):
         self._sockets = dict()
         for address in addresses:
             self._sockets[address] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
